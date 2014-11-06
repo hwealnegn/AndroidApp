@@ -24,26 +24,26 @@
 
     <View
         android:id="@+id/view1"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_alignLeft="@+id/textView1"
-        android:layout_below="@+id/imageView1"
-        android:background="@android:color/black" />
-
-    <ScrollView
-        android:id="@+id/scrollView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/view1"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="18dp" >
- 
-        <LinearLayout
-            android:id="@+id/linearLayout1"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical" >
-        </LinearLayout>
-     </ScrollView>
++        android:layout_width="match_parent"
++        android:layout_height="1dp"
++        android:layout_alignLeft="@+id/textView1"
++        android:layout_below="@+id/imageView1"
++        android:background="@android:color/black" />
++
++    <ScrollView
++        android:id="@+id/scrollView1"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_below="@+id/view1"
++        android:layout_centerHorizontal="true"
++        android:layout_marginTop="18dp" >
++
++        <LinearLayout
++            android:id="@+id/linearLayout1"
++            android:layout_width="match_parent"
++            android:layout_height="match_parent"
++            android:orientation="vertical" >
++        </LinearLayout>
++    </ScrollView>
 
 </RelativeLayout>
