@@ -1,20 +1,45 @@
 package com.example.takephoto;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
+import com.parse.FindCallback;
+import com.parse.Parse;
+import com.parse.ParseFile;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.SaveCallback;
+
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.ParseException;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 
 public class MainActivity extends Activity {
 
 	private static final int REQUEST_CODE_TAKE_PHOTO = 0;
+	private static final int REQUEST_CODE_GALLERY = 1;
+	
+	private Uri extraOutput;
 	private ImageView imageView;
+	private LinearLayout linearLayout;
+	private ProgressDialog progressDialog;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,10 +47,15 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         
         imageView = (ImageView) findViewById(R.id.imageView1);
+        linearLayout = (LinearLayout) findViewById(R.id.linearLayout1);
+        progressDialog = new ProgressDialog(this);
+        
+        Parse.initialize(this, "vCc6OvERtPviwaPBknPcT7ARxBd1ON0BoP0qcYMa", "KufmfkHe6Kj1iP3Cum6usWj1AVRd0bnBo8GZNnHg");
+        
+        loadPhotoFromParse();
     }
 
-
-    @Override
+	@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
@@ -42,9 +72,19 @@ public class MainActivity extends Activity {
             return true;
         } else if (id == R.id.action_take_photo) {
         	Log.d("debug", "take photo");
+        	
+        	extraOutput = getOutputUri();
+        	
         	Intent intent = new Intent();
         	intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
+        	intent.putExtra(MediaStore.EXTRA_OUTPUT, extraOutput);
         	startActivityForResult(intent, REQUEST_CODE_TAKE_PHOTO);
+        	return true;
+        } else if (id == R.id.action_gallery) {
+        	Intent intent = new Intent();
+        	intent.setType("image/*");
+        	intent.setAction(Intent.ACTION_GET_CONTENT);
+        	startActivityForResult(intent, REQUEST_CODE_GALLERY);
         	return true;
         }
         return super.onOptionsItemSelected(item);
@@ -55,12 +95,103 @@ public class MainActivity extends Activity {
     	super.onActivityResult(requestCode, resultCode, data);
     	
     	if (requestCode == REQUEST_CODE_TAKE_PHOTO) {
-    		if (resultCode == REQUEST_CODE_TAKE_PHOTO) {
     			if (resultCode == RESULT_OK) {
-    				Bitmap bitmap = data.getParcelableExtra("data");
-    				imageView.setImageBitmap(bitmap);
+//    				Bitmap bitmap = data.getParcelableExtra("data");
+//    				imageView.setImageBitmap(bitmap);
+    				imageView.setImageURI(extraOutput);
+    				saveToParse(extraOutput);
+    			}
+    		} else if (requestCode == REQUEST_CODE_GALLERY) {
+    			if (resultCode == RESULT_OK) {
+    				Uri selectedImageUri = data.getData();
+    				imageView.setImageURI(selectedImageUri);
+    				saveToParse(selectedImageUri);
     			}
     		}
     	}
-    }
+    
+	private Uri getOutputUri() {
+		File dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+		if (dcimDir.exists() == false) {
+			dcimDir.mkdirs();
+		}
+		File file = new File(dcimDir, "photo.png");
+		return Uri.fromFile(file);
+	}
+	
+	private byte[] uriToBytes(Uri uri) {
+		try {
+			InputStream is = getContentResolver().openInputStream(uri);
+			ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+			
+			byte[] buffer = new byte[1024];
+			int len = 0;
+			while ((len = is.read(buffer)) != -1) {
+				byteBuffer.write(buffer, 0, len);
+			}
+			return byteBuffer.toByteArray();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	private void saveToParse(Uri uri) {
+		byte[] bytes = uriToBytes(uri);
+		
+		ParseObject object = new ParseObject("Photo");
+		final ParseFile file = new ParseFile("photo.png", bytes);
+
+		object.put("file", file);
+		object.saveInBackground(new SaveCallback(){
+			@Override
+			public void done(com.parse.ParseException e) {
+				// TODO Auto-generated method stub
+				Log.d("debug", file.getUrl());
+				loadPhotoFromParse();
+			}				
+		});
+	}
+	
+    private void loadPhotoFromParse() {
+		// TODO Auto-generated method stub
+    	progressDialog.setTitle("Loading...");
+    	progressDialog.show();
+    	
+		ParseQuery<ParseObject> query = new ParseQuery<ParseObject>("Photo");
+		query.orderByDescending("createdAt");
+		query.findInBackground(new FindCallback<ParseObject>(){
+			
+			@Override
+			public void done(List<ParseObject> objects,
+					com.parse.ParseException e) {
+				// TODO Auto-generated method stub
+				linearLayout.removeAllViews();
+				
+				for (ParseObject object : objects) {
+					ParseFile file = object.getParseFile("file");
+					Log.d("debug", file.getName());
+					
+					try {
+						byte[] data = file.getData();
+						Bitmap bitmap = BitmapFactory.decodeByteArray(data,0,data.length);
+						
+						ImageView imageView = new ImageView(MainActivity.this);
+						imageView.setImageBitmap(bitmap);
+						
+						linearLayout.addView(imageView);
+						
+						Log.d("debug", file.getName());
+
+					} catch (com.parse.ParseException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+				progressDialog.dismiss();
+			}
+		});
+	}
 }
