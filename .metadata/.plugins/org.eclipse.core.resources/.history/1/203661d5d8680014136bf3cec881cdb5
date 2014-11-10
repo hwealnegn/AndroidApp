@@ -116,19 +116,6 @@ public class MainActivity extends Activity {
     	}
     };
     
-    class NetworkRunner extends AsyncTask<String, Integer, String> {
-
-		@Override
-		protected String doInBackground(String... params) {
-			// TODO Auto-generated method stub
-			return fetch(params[0]);
-		}
-    	
-		protected void onPostExecute(String result) {
-			textView.setText(result);
-		}
-    }
-    
     AsyncTask<String, Integer, String> task = new AsyncTask<String, Integer, String>() {
     	@Override
     	protected String doInBackground(String... params) {
