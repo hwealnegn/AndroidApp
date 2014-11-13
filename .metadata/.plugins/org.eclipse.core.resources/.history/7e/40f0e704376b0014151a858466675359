@@ -1,0 +1,7 @@
+package com.example.myfirstapp.fragment;
+
+import android.app.Fragment;
+
+public class MyFragmentPagerAdapter extends Fragment {
+
+}
